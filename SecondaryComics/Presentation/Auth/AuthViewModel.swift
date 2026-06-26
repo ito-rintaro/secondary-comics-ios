@@ -16,6 +16,9 @@ enum AuthPhase: Equatable {
 @Observable
 final class AuthViewModel {
     private let service: AuthService
+    private let store: UserDefaults
+    /// 「過去にサインインに成功したか」の永続フラグ。起動時オフラインでの状態維持に使う。
+    private static let wasSignedInKey = "auth.wasSignedIn"
 
     private(set) var phase: AuthPhase = .restoring
     /// サインイン処理中フラグ（ボタンのスピナー / 二重押下防止）。
@@ -23,13 +26,29 @@ final class AuthViewModel {
     /// 直近のエラーメッセージ（ログイン画面に表示）。
     var errorMessage: String?
 
-    init(service: AuthService) {
+    init(service: AuthService, store: UserDefaults = .standard) {
         self.service = service
+        self.store = store
     }
 
-    /// 起動時に呼ぶ。既存セッションがあればそのまま本体へ。
+    private var wasSignedIn: Bool {
+        get { store.bool(forKey: Self.wasSignedInKey) }
+        set { store.set(newValue, forKey: Self.wasSignedInKey) }
+    }
+
+    /// 起動時に呼ぶ。永続化済みセッションがあれば自動ログイン。
+    /// 起動時にネットワーク不通でも、前回ログイン済みなら維持する（無効なら最初の API 401 で再ログインへ）。
     func restore() async {
-        phase = await service.isSignedIn() ? .signedIn : .signedOut
+        switch await service.restoreSession() {
+        case .signedIn:
+            wasSignedIn = true
+            phase = .signedIn
+        case .signedOut:
+            wasSignedIn = false
+            phase = .signedOut
+        case .indeterminate:
+            phase = wasSignedIn ? .signedIn : .signedOut
+        }
     }
 
     func signIn(email: String, password: String) async {
@@ -39,6 +58,7 @@ final class AuthViewModel {
         defer { isSubmitting = false }
         do {
             try await service.signIn(email: email, password: password)
+            wasSignedIn = true
             phase = .signedIn
         } catch {
             errorMessage = error.localizedDescription
@@ -48,11 +68,13 @@ final class AuthViewModel {
 
     func signOut() async {
         await service.signOut()
+        wasSignedIn = false
         phase = .signedOut
     }
 
     /// 401 を受けた際の強制サインアウト（再ログイン導線）。
     func forceSignedOut() {
+        wasSignedIn = false
         errorMessage = "ログインの有効期限が切れました。再度ログインしてください。"
         phase = .signedOut
     }

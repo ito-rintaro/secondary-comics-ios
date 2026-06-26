@@ -24,9 +24,17 @@ struct AmplifyAuthService: AuthService {
         _ = await Amplify.Auth.signOut()
     }
 
-    func isSignedIn() async -> Bool {
-        guard let session = try? await Amplify.Auth.fetchAuthSession() else { return false }
-        return session.isSignedIn
+    /// Amplify はトークン（refresh token 含む）を Keychain に永続化するため、
+    /// アプリ再起動後も `fetchAuthSession()` でセッションを復元できる（期限切れトークンは自動更新）。
+    func restoreSession() async -> SessionRestoreResult {
+        do {
+            // 未サインインでも throw はせず isSignedIn = false の session が返る。
+            let session = try await Amplify.Auth.fetchAuthSession()
+            return session.isSignedIn ? .signedIn : .signedOut
+        } catch {
+            // 取得自体に失敗（多くは起動時のネットワーク不通）→ 判定保留。
+            return .indeterminate
+        }
     }
 
     /// Amplify の `AuthError` を UI 表示用の `AuthServiceError` へ写像する。

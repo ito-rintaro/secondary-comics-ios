@@ -40,11 +40,11 @@ secondary-comics-ios/
 | `App/` | アプリ起動（`@main`）と **DI コンテナ `AppContainer`** + 環境設定 `AppConfig`。`config.useAPI` で Demo / 実API を配線。`AppConfig.current` が dev/prod を切替（§4） |
 | `Infrastructure/Repository/` | Repository protocol の実装。Demo（`*RepositoryDemo`）と 実API（`*RepositoryAPI`：`GET /collection` `/market`）の両方 |
 | `Infrastructure/Network/` | `APIClient`（Bearer 付与・401 判定・JSON デコード）+ `APIError`。§4 |
-| `Infrastructure/Auth/` | Cognito 認証。`AuthService` / `TokenProvider`（Amplify 実装 + Demo 用 Stub）・Amplify 構成。§4 |
+| `Infrastructure/Auth/` | Cognito 認証。`AuthService` / `TokenProvider`（Amplify 実装 + Demo 用 Stub）・Amplify 構成。トークンは Keychain に永続化され再起動後も自動ログイン。§4 |
 | `Infrastructure/Image/` | 画像 URL の解決（S3キー → CloudFront URL）。§6.2 |
 | `Presentation/Theme/` | 配色トークン（§6.1）と表示フォーマット・色クラス（§3.5） |
 | `Presentation/Common/` | 再利用 View（画像・状態バッジ・空/エラー表示・ロード状態） |
-| `Presentation/Auth/` | ログイン画面と `AuthViewModel`（セッション状態・サインイン/アウト）。§4, §7 |
+| `Presentation/Auth/` | ログイン画面と `AuthViewModel`（セッション状態・サインイン/アウト・起動時の自動ログイン復元）。§4, §7 |
 | `Presentation/Collection/` | マイコレクション画面（一覧・詳細）と ViewModel。§7.1 |
 | `Presentation/Market/` | マーケット画面（一覧・詳細・12ヶ月チャート）と ViewModel。§7.2 |
 | `Presentation/Root/` | `TabView`（コレクション / マーケット）+ 401 で再ログイン導線。§7 |
