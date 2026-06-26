@@ -14,15 +14,15 @@ Core/                         ローカル Swift Package（純 Swift・SwiftUI �
     Application/ ports / use cases / query  ← Repository protocol, filter/sort/search（§7.3）
   Tests/                       計算式・クエリの単体テスト（17 件）
 SecondaryComics/              iOS アプリ（Xcode の file-system-synchronized group）
-  App/          エントリ + DI コンテナ（AppContainer）+ 環境設定（AppConfig）
-  Infrastructure/ Demo リポジトリ + 画像 URL 解決（§6.2）
-  Presentation/ Theme（配色 §6.1 / フォーマット §3.5）+ Collection / Market の View・ViewModel
-SecondaryComics.xcodeproj/    Core をローカルパッケージとして参照
+  App/          エントリ + DI コンテナ（AppContainer）+ 環境設定（AppConfig: dev/prod）
+  Infrastructure/ Demo / 実API リポジトリ + 通信（Network）+ 認証（Auth: Cognito）+ 画像 URL 解決（§6.2）
+  Presentation/ Theme（配色 §6.1 / フォーマット §3.5）+ Auth（ログイン）+ Collection / Market の View・ViewModel
+SecondaryComics.xcodeproj/    Core + Amplify Swift をパッケージとして参照
 ```
 
 アーキテクチャ: Domain ← Application ← Presentation / Infrastructure（クリーンアーキテクチャ, §8）。
-Repository は protocol で抽象化し、`Demo`（モック）↔ `Impl`（実 API）を DI で差し替える。
-現状は **Demo モード**（実 API 不要で全画面が動作）。
+Repository は protocol で抽象化し、`Demo`（モック）↔ `API`（実 API）を DI で差し替える。
+実 API + Cognito 認証を実装済み。`AppConfig.useAPI = false` で **Demo モード**（実 API・認証なしに全画面が動作）に戻せる。
 
 ## ビルド / テスト
 
@@ -30,12 +30,13 @@ Repository は protocol で抽象化し、`Demo`（モック）↔ `Impl`（実 
 # ドメイン層のテスト（シミュレータ不要・高速）
 cd Core && swift test
 
-# アプリのビルド
-xcodebuild -project SecondaryComics.xcodeproj -scheme SecondaryComics \
+# アプリのビルド（dev は Comics Dev / prod は Comics Prod スキーム）
+xcodebuild -project SecondaryComics.xcodeproj -scheme "Comics Dev" \
   -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.5' build
 ```
 
-Xcode で `SecondaryComics.xcodeproj` を開けばそのまま実行可能。
+Xcode で `SecondaryComics.xcodeproj` を開き、スキーム **Comics Dev**（dev）/ **Comics Prod**（prod）を選んで実行・Archive する。
+TestFlight 配布は各スキームで Archive（Release 構成・環境別バンドル ID）。
 
 ## 実装状況
 
@@ -43,9 +44,10 @@ Xcode で `SecondaryComics.xcodeproj` を開けばそのまま実行可能。
 - [x] **Phase 1** Domain 層（§3 の計算式 + テスト）
 - [x] Presentation 基盤（配色トークン / フォーマッタ）
 - [x] Demo リポジトリ + UI（コレクション/マーケット 一覧・詳細・検索/フィルタ/ソート・12ヶ月チャート）
-- [ ] **Phase 4** 実 API 接続（要 `openapi.yaml` / dev 環境値 / 認証ライブラリ決定）
+- [x] **Phase 4** 実 API 接続（`GET /collection` `/market` + Cognito 認証 / Amplify Swift）
+- [x] dev / prod 環境分離（ビルド構成 + スキーム + 環境別バンドル ID）
 
-### Phase 4 に必要（未提供）
-1. `openapi.yaml` — API 契約（DTO 生成元・最優先）
-2. dev 環境の実値（§4: Cognito / API Gateway / CloudFront）
-3. 認証ライブラリの決定（Amplify Swift 推奨）
+### 残課題
+1. `AppConfig.prod` の実値記入（現状 dev のみ。空だと prod ビルドで API/認証が無効）
+2. dev 用バンドル ID（`...secondary-comics.dev`）の App ID 登録 + App Store Connect レコード作成
+3. MFA / 新パスワード要求など Cognito の追加認証ステップ（MVP では非対応）

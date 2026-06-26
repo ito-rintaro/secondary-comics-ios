@@ -13,6 +13,9 @@ final class CollectionListModel {
     var filter: CollectionFilter = .all
     var sort: CollectionSort = .updated
 
+    /// 401（未認証）を検知したときの再ログイン導線。RootView がサインアウト処理を注入する。
+    var onUnauthorized: (() -> Void)?
+
     init(listCollection: ListCollection) {
         self.listCollection = listCollection
     }
@@ -36,6 +39,9 @@ final class CollectionListModel {
         do {
             state = .loaded(try await listCollection())
         } catch {
+            if let apiError = error as? APIError, apiError == .unauthorized {
+                onUnauthorized?()
+            }
             state = .failed(error.localizedDescription)
         }
     }

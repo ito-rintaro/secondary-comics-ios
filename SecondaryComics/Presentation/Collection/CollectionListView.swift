@@ -5,10 +5,13 @@ import SecondaryComicsCore
 struct CollectionListView: View {
     @State private var model: CollectionListModel
     let imageBaseURL: String
+    /// サインアウト導線。Demo / プレビューでは nil（ボタン非表示）。
+    let onSignOut: (() -> Void)?
 
-    init(model: CollectionListModel, imageBaseURL: String) {
+    init(model: CollectionListModel, imageBaseURL: String, onSignOut: (() -> Void)? = nil) {
         _model = State(initialValue: model)
         self.imageBaseURL = imageBaseURL
+        self.onSignOut = onSignOut
     }
 
     var body: some View {
@@ -19,6 +22,18 @@ struct CollectionListView: View {
             }
             .navigationTitle("マイコレクション")
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar {
+                if let onSignOut {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            Button("ログアウト", role: .destructive, action: onSignOut)
+                        } label: {
+                            Image(systemName: "person.crop.circle")
+                        }
+                        .tint(Theme.accent)
+                    }
+                }
+            }
         }
         .searchable(text: $model.search, prompt: "作品名・著者・出版社")
         .task { if case .idle = model.state { await model.load() } }
