@@ -12,6 +12,9 @@ final class MarketListModel {
     var search: String = ""
     var sort: MarketSort = .priceDesc
 
+    /// 401（未認証）を検知したときの再ログイン導線。RootView がサインアウト処理を注入する。
+    var onUnauthorized: (() -> Void)?
+
     init(listMarket: ListMarket) {
         self.listMarket = listMarket
     }
@@ -33,6 +36,9 @@ final class MarketListModel {
         do {
             state = .loaded(try await listMarket())
         } catch {
+            if let apiError = error as? APIError, apiError == .unauthorized {
+                onUnauthorized?()
+            }
             state = .failed(error.localizedDescription)
         }
     }

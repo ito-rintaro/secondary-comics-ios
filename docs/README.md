@@ -15,9 +15,9 @@ secondary-comics-ios/
 │       └─ Application/   ユースケース + Repository protocol + 検索/フィルタ/ソート
 │
 └─ SecondaryComics/       iOS アプリ（SwiftUI）
-    ├─ App/               起動・DI（Demo↔API を決める合成ルート）
-    ├─ Infrastructure/    データ取得の実装（現状 Demo）・画像URL解決
-    └─ Presentation/      画面（View）と ViewModel・配色/整形
+    ├─ App/               起動・DI（Demo↔API を決める合成ルート）・環境設定（dev/prod）
+    ├─ Infrastructure/    データ取得の実装（Demo / 実API）・認証（Cognito）・通信・画像URL解決
+    └─ Presentation/      画面（View）と ViewModel・配色/整形・ログイン
 ```
 
 ## 各フォルダの役割
@@ -37,22 +37,32 @@ secondary-comics-ios/
 
 | フォルダ | 担っている内容 |
 |---|---|
-| `App/` | アプリ起動（`@main`）と **DI コンテナ `AppContainer`**。Demo か API かをここで決めて配線する |
-| `Infrastructure/Repository/` | Repository protocol の実装。現状は Demo（モックデータ）。Phase 4 で実 API 実装を追加 |
+| `App/` | アプリ起動（`@main`）と **DI コンテナ `AppContainer`** + 環境設定 `AppConfig`。`config.useAPI` で Demo / 実API を配線。`AppConfig.current` が dev/prod を切替（§4） |
+| `Infrastructure/Repository/` | Repository protocol の実装。Demo（`*RepositoryDemo`）と 実API（`*RepositoryAPI`：`GET /collection` `/market`）の両方 |
+| `Infrastructure/Network/` | `APIClient`（Bearer 付与・401 判定・JSON デコード）+ `APIError`。§4 |
+| `Infrastructure/Auth/` | Cognito 認証。`AuthService` / `TokenProvider`（Amplify 実装 + Demo 用 Stub）・Amplify 構成。§4 |
 | `Infrastructure/Image/` | 画像 URL の解決（S3キー → CloudFront URL）。§6.2 |
 | `Presentation/Theme/` | 配色トークン（§6.1）と表示フォーマット・色クラス（§3.5） |
 | `Presentation/Common/` | 再利用 View（画像・状態バッジ・空/エラー表示・ロード状態） |
+| `Presentation/Auth/` | ログイン画面と `AuthViewModel`（セッション状態・サインイン/アウト）。§4, §7 |
 | `Presentation/Collection/` | マイコレクション画面（一覧・詳細）と ViewModel。§7.1 |
 | `Presentation/Market/` | マーケット画面（一覧・詳細・12ヶ月チャート）と ViewModel。§7.2 |
-| `Presentation/Root/` | `TabView`（コレクション / マーケット）。§7 |
+| `Presentation/Root/` | `TabView`（コレクション / マーケット）+ 401 で再ログイン導線。§7 |
 
 ## 押さえる 3 点
 
 1. **ドメインの正は Core、見せ方の判断は SecondaryComics**。計算・絞り込みのルールは Core にあり、アプリ側に重複しない。
 2. **差し替えの接合点は Repository protocol（`Application/Port`）だけ**。View も ViewModel も protocol しか見ないので、実装を変えても上流は無改修。
-3. **Demo か実 API かを決めるのは `App/AppContainer`**。現状は Demo モードで、実 API なしに全画面が動く。
+3. **Demo か実 API かを決めるのは `App/AppContainer`**。`config.useAPI = false` で Demo モード（実 API・認証なしに全画面が動く）に戻せる。
 
-## API 接続（Phase 4）で触る場所
+## 実 API 接続（実装済み）
 
-`Infrastructure/` に API 実装を追加 →`App/AppContainer` の注入を差し替え →`App/AppConfig` に dev 環境値を入れる。
-**Core（Domain / Application）と Presentation は無改修**で済むのがこの構造の狙い。
+`Infrastructure/Network`・`Infrastructure/Auth`・`Infrastructure/Repository/*RepositoryAPI` で実 API + Cognito 認証を実装済み。
+`App/AppContainer` が `AppConfig.useAPI` を見て Demo / 実 API を組み立てる。**Core（Domain / Application）と Presentation の主要部は無改修**で済むのがこの構造の狙い。
+
+### dev / prod 環境の切り替え
+
+- ビルド構成（`Debug/Release × Dev/Prod`）+ スキーム **Comics Dev / Comics Prod** で分離。
+- コンパイルフラグ `DEV` / `PROD` に応じて `AppConfig.current` が `dev` / `prod` を返す。
+- Amplify は `AppConfig` の値からプログラム的に構成（環境別 JSON は不要）。
+- バンドル ID も環境別（dev: `...secondary-comics.dev` / prod: `...secondary-comics`）で TestFlight 配布を両立。
