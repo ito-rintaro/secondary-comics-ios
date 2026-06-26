@@ -45,6 +45,7 @@ TestFlight 配布は各スキームで Archive（Release 構成・環境別バ�
 - [x] Presentation 基盤（配色トークン / フォーマッタ）
 - [x] Demo リポジトリ + UI（コレクション/マーケット 一覧・詳細・検索/フィルタ/ソート・12ヶ月チャート）
 - [x] **Phase 4** 実 API 接続（`GET /collection` `/market` + Cognito 認証 / Amplify Swift）
+- [x] セッション永続化（再起動後の自動ログイン・オフライン起動でも状態維持）
 - [x] dev / prod 環境分離（ビルド構成 + スキーム + 環境別バンドル ID）
 
 ### 残課題

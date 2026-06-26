@@ -7,7 +7,7 @@ struct StubAuthService: AuthService {
 
     func signIn(email: String, password: String) async throws {}
     func signOut() async {}
-    func isSignedIn() async -> Bool { signedIn }
+    func restoreSession() async -> SessionRestoreResult { signedIn ? .signedIn : .signedOut }
 }
 
 /// Demo / プレビュー用のトークン供給。Demo リポジトリはトークンを使わないためダミー値を返す。

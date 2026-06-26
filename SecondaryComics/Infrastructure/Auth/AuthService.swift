@@ -8,8 +8,18 @@ protocol AuthService: Sendable {
     func signIn(email: String, password: String) async throws
     /// サインアウトする（失敗してもローカル状態はクリアする想定）。
     func signOut() async
-    /// 既存セッションでサインイン済みか（起動時の自動ログイン判定に使う）。
-    func isSignedIn() async -> Bool
+    /// 起動時に永続化済みセッションを復元する（自動ログイン判定）。
+    func restoreSession() async -> SessionRestoreResult
+}
+
+/// 起動時のセッション復元結果。
+enum SessionRestoreResult {
+    /// 有効なセッションあり → そのまま本体へ。
+    case signedIn
+    /// セッションなし → ログイン画面へ。
+    case signedOut
+    /// 判定不能（多くは起動時のネットワーク不通）。前回の状態を維持する。
+    case indeterminate
 }
 
 /// 認証操作のエラー。UI でそのまま表示できる日本語メッセージを持つ。
