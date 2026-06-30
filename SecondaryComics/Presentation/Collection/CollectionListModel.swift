@@ -26,6 +26,12 @@ final class CollectionListModel {
         return applyCollectionQuery(items, search: search, filter: filter, sort: sort)
     }
 
+    /// 全件（フィルタ非依存）。内訳グラフ等の集計に使う。
+    var allItems: [CollectionItem] {
+        guard case let .loaded(items) = state else { return [] }
+        return items
+    }
+
     /// 全件サマリー（フィルタ非依存）。
     var summary: CollectionSummary {
         guard case let .loaded(items) = state else {

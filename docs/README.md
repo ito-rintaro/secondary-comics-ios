@@ -45,7 +45,7 @@ secondary-comics-ios/
 | `Presentation/Theme/` | 配色トークン（§6.1）と表示フォーマット・色クラス（§3.5） |
 | `Presentation/Common/` | 再利用 View（画像・状態バッジ・空/エラー表示・ロード状態） |
 | `Presentation/Auth/` | ログイン画面と `AuthViewModel`（セッション状態・サインイン/アウト・起動時の自動ログイン復元）。§4, §7 |
-| `Presentation/Collection/` | マイコレクション画面（一覧・詳細・新規登録モーダル）と ViewModel。新規登録はカタログ参照型（`GET /catalogs` で選択 → `POST /collection`）。§7.1 |
+| `Presentation/Collection/` | マイコレクション画面（一覧・詳細・新規登録モーダル）と ViewModel。一覧上部に評価額の内訳ドーナツ（作品/出版社/著者/状態で集計）。新規登録はカタログ参照型（`GET /catalogs` で選択 → `POST /collection`）。§7.1 |
 | `Presentation/Market/` | マーケット画面（一覧・詳細・12ヶ月チャート）と ViewModel。§7.2 |
 | `Presentation/Root/` | `TabView`（コレクション / マーケット）+ 401 で再ログイン導線。§7 |
 
