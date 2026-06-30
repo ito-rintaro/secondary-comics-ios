@@ -9,6 +9,9 @@ enum APIError: LocalizedError, Equatable {
     case invalidResponse
     /// 2xx 以外（401 を除く）。
     case http(status: Int)
+    /// サーバーが本文 `{ "message": "..." }` で返したエラー（400 など）。
+    /// そのメッセージをそのまま画面へ表示する（OpenAPI の `Error`）。
+    case server(status: Int, message: String)
     /// レスポンス本文の JSON デコード失敗。
     case decoding
     /// 通信そのものの失敗（オフライン等）。
@@ -22,6 +25,8 @@ enum APIError: LocalizedError, Equatable {
             return "サーバーから不正な応答が返りました。"
         case let .http(status):
             return "通信に失敗しました（HTTP \(status)）。"
+        case let .server(_, message):
+            return message
         case .decoding:
             return "データの解析に失敗しました。"
         case .transport:
