@@ -34,6 +34,29 @@ enum DemoData {
         )
     ]
 
+    static let catalogs: [Catalog] = [
+        Catalog(
+            id: "cat-001", title: "鋼の錬金術師", author: "荒川弘",
+            publisher: "スクウェア・エニックス", volume: "全27巻", year: "2002",
+            flags: ConditionFlags(firstEd: true, obi: true)
+        ),
+        Catalog(
+            id: "cat-002", title: "AKIRA", author: "大友克洋",
+            publisher: "講談社", volume: "全6巻", year: "1984",
+            flags: ConditionFlags(firstEd: true)
+        ),
+        Catalog(
+            id: "cat-003", title: "ドラゴンボール", author: "鳥山明",
+            publisher: "集英社", volume: "全42巻", year: "1985",
+            flags: ConditionFlags()
+        ),
+        Catalog(
+            id: "cat-004", title: "SLAM DUNK", author: "井上雄彦",
+            publisher: "集英社", volume: "全31巻", year: "1990",
+            flags: ConditionFlags(special: true)
+        )
+    ]
+
     static let market: [MarketRecord] = [
         MarketRecord(
             id: "m1", title: "AKIRA", author: "大友克洋", publisher: "講談社", volume: "全6巻",
@@ -57,10 +80,49 @@ enum DemoData {
 }
 
 /// 遅延を模した Demo リポジトリ（Demo ↔ Impl を DI で差し替え）。
-struct CollectionRepositoryDemo: CollectionRepository {
+/// 新規登録を擬似的に永続化するため actor で可変リストを保持する
+/// （登録した直後の一覧再取得に反映させる）。
+actor CollectionRepositoryDemo: CollectionRepository {
+    private var items: [CollectionItem] = DemoData.collection
+
     func fetchCollection() async throws -> [CollectionItem] {
         try? await Task.sleep(for: .milliseconds(300))
-        return DemoData.collection
+        return items
+    }
+
+    func createCollection(_ input: NewCollectionInput) async throws -> CollectionItem {
+        try? await Task.sleep(for: .milliseconds(300))
+        // サーバの enrich を模す: カタログ由来の書誌を合成し、id / updatedAt を採番する。
+        let catalog = DemoData.catalogs.first { $0.id == input.catalogId }
+        let item = CollectionItem(
+            id: "demo-\(items.count + 1)",
+            title: catalog?.title ?? "（不明なカタログ）",
+            author: catalog?.author ?? "",
+            publisher: catalog?.publisher ?? "",
+            volume: catalog?.volume ?? "",
+            year: catalog?.year ?? "",
+            condition: input.condition,
+            qty: input.qty,
+            cost: input.cost,
+            market: 0,
+            marketSource: .estimate,
+            flags: catalog?.flags ?? ConditionFlags(),
+            purchaseDate: input.purchaseDate,
+            store: input.store,
+            location: input.location,
+            memo: input.memo,
+            imageUrl: catalog?.imageUrl ?? "",
+            updatedAt: Int64(Date().timeIntervalSince1970 * 1000)
+        )
+        items.insert(item, at: 0)
+        return item
+    }
+}
+
+struct CatalogRepositoryDemo: CatalogRepository {
+    func fetchCatalogs() async throws -> [Catalog] {
+        try? await Task.sleep(for: .milliseconds(300))
+        return DemoData.catalogs
     }
 }
 

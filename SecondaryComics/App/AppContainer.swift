@@ -9,17 +9,20 @@ final class AppContainer {
     let config: AppConfig
     let collectionRepository: CollectionRepository
     let marketRepository: MarketRepository
+    let catalogRepository: CatalogRepository
     let authService: AuthService
 
     init(
         config: AppConfig,
         collectionRepository: CollectionRepository,
         marketRepository: MarketRepository,
+        catalogRepository: CatalogRepository,
         authService: AuthService
     ) {
         self.config = config
         self.collectionRepository = collectionRepository
         self.marketRepository = marketRepository
+        self.catalogRepository = catalogRepository
         self.authService = authService
     }
 
@@ -32,6 +35,7 @@ final class AppContainer {
                 config: config,
                 collectionRepository: CollectionRepositoryAPI(client: client),
                 marketRepository: MarketRepositoryAPI(client: client),
+                catalogRepository: CatalogRepositoryAPI(client: client),
                 authService: AmplifyAuthService()
             )
         } else {
@@ -39,11 +43,14 @@ final class AppContainer {
                 config: config,
                 collectionRepository: CollectionRepositoryDemo(),
                 marketRepository: MarketRepositoryDemo(),
+                catalogRepository: CatalogRepositoryDemo(),
                 authService: StubAuthService()
             )
         }
     }
 
     var listCollection: ListCollection { ListCollection(repository: collectionRepository) }
+    var createCollection: CreateCollection { CreateCollection(repository: collectionRepository) }
     var listMarket: ListMarket { ListMarket(repository: marketRepository) }
+    var listCatalogs: ListCatalogs { ListCatalogs(repository: catalogRepository) }
 }

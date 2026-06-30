@@ -28,8 +28,8 @@ secondary-comics-ios/
 |---|---|
 | `Core/.../Domain/Model/` | データの型（CollectionItem / MarketRecord / Condition など）。§3.1–3.3 |
 | `Core/.../Domain/Calculation/` | **計算式の正**。含み損益・評価額・サマリー・変化率。§3.4 |
-| `Core/.../Application/Port/` | `CollectionRepository` / `MarketRepository` protocol（**Demo↔API 差し替えの接合点**）。§8 |
-| `Core/.../Application/UseCase/` | データ取得を依頼する薄い指揮役（`ListCollection` など）。§8 |
+| `Core/.../Application/Port/` | `CollectionRepository`（取得 + `createCollection`）/ `MarketRepository` / `CatalogRepository` protocol（**Demo↔API 差し替えの接合点**）。§8 |
+| `Core/.../Application/UseCase/` | データ取得・作成を依頼する薄い指揮役（`ListCollection` / `CreateCollection` / `ListCatalogs` など）。§8 |
 | `Core/.../Application/Query/` | 検索・フィルタ・ソート（すべてクライアント側）。§7.3 |
 | `Core/Tests/` | 計算式・クエリの単体テスト（`swift test` で実行・シミュレータ不要） |
 
@@ -38,14 +38,14 @@ secondary-comics-ios/
 | フォルダ | 担っている内容 |
 |---|---|
 | `App/` | アプリ起動（`@main`）と **DI コンテナ `AppContainer`** + 環境設定 `AppConfig`。`config.useAPI` で Demo / 実API を配線。`AppConfig.current` が dev/prod を切替（§4） |
-| `Infrastructure/Repository/` | Repository protocol の実装。Demo（`*RepositoryDemo`）と 実API（`*RepositoryAPI`：`GET /collection` `/market`）の両方 |
-| `Infrastructure/Network/` | `APIClient`（Bearer 付与・401 判定・JSON デコード）+ `APIError`。§4 |
+| `Infrastructure/Repository/` | Repository protocol の実装。Demo（`*RepositoryDemo`）と 実API（`*RepositoryAPI`：`GET /collection` `POST /collection` `GET /market` `GET /catalogs`）の両方 |
+| `Infrastructure/Network/` | `APIClient`（Bearer 付与・GET/POST・401 判定・`{message}` エラー本文の解釈・JSON エンコード/デコード）+ `APIError`。§4 |
 | `Infrastructure/Auth/` | Cognito 認証。`AuthService` / `TokenProvider`（Amplify 実装 + Demo 用 Stub）・Amplify 構成。トークンは Keychain に永続化され再起動後も自動ログイン。§4 |
 | `Infrastructure/Image/` | 画像 URL の解決（S3キー → CloudFront URL）。§6.2 |
 | `Presentation/Theme/` | 配色トークン（§6.1）と表示フォーマット・色クラス（§3.5） |
 | `Presentation/Common/` | 再利用 View（画像・状態バッジ・空/エラー表示・ロード状態） |
 | `Presentation/Auth/` | ログイン画面と `AuthViewModel`（セッション状態・サインイン/アウト・起動時の自動ログイン復元）。§4, §7 |
-| `Presentation/Collection/` | マイコレクション画面（一覧・詳細）と ViewModel。§7.1 |
+| `Presentation/Collection/` | マイコレクション画面（一覧・詳細・新規登録モーダル）と ViewModel。新規登録はカタログ参照型（`GET /catalogs` で選択 → `POST /collection`）。§7.1 |
 | `Presentation/Market/` | マーケット画面（一覧・詳細・12ヶ月チャート）と ViewModel。§7.2 |
 | `Presentation/Root/` | `TabView`（コレクション / マーケット）+ 401 で再ログイン導線。§7 |
 
