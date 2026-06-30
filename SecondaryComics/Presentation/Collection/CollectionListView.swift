@@ -105,6 +105,7 @@ struct CollectionListView: View {
         ScrollView {
             VStack(spacing: 12) {
                 CollectionSummaryHeader(summary: model.summary)
+                CollectionBreakdownCard(items: model.allItems, totalValue: model.summary.totalValue)
                 filterSortBar
                 ForEach(model.visibleItems) { item in
                     NavigationLink {
