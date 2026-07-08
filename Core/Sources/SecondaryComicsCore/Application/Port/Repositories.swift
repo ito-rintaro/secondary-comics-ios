@@ -7,9 +7,11 @@ public protocol CollectionRepository: Sendable {
     func createCollection(_ input: NewCollectionInput) async throws -> CollectionItem
 }
 
-/// マーケット取得の port。
+/// マーケット相場取得の port。
+/// 相場一覧カード・価格チャートは catalog 単位に集計された `MarketSummary`
+/// （`GET /market/summary`）を供給源にする。
 public protocol MarketRepository: Sendable {
-    func fetchMarket() async throws -> [MarketRecord]
+    func fetchMarketSummary() async throws -> [MarketSummary]
 }
 
 /// カタログ（書誌マスタ）取得の port。全ユーザー共通（グローバル）。

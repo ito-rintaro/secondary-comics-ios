@@ -15,10 +15,11 @@ public struct CollectionSummary: Sendable, Equatable {
     }
 }
 
-/// マーケット全体サマリー。
-public struct MarketSummary: Sendable, Equatable {
-    public let count: Int        // records.count
-    public let topPrice: Int     // max(price)
+/// マーケット全体のヘッダ集計（相場サマリ配列を横断して求める概況）。
+/// catalog 単位の相場サマリ（`MarketSummary`）とは別物。
+public struct MarketOverview: Sendable, Equatable {
+    public let count: Int         // 相場のある銘柄数（summaries.count）
+    public let topPrice: Int      // max(price)
     public let avgPrice: Double   // mean(price)
     public let avgChange: Double  // mean(change)
 
@@ -43,16 +44,16 @@ public func summarize(_ items: [CollectionItem]) -> CollectionSummary {
     )
 }
 
-/// マーケット配列を集計する。空配列なら全て 0（平均は 0）。
-public func summarizeMarket(_ records: [MarketRecord]) -> MarketSummary {
-    guard !records.isEmpty else {
-        return MarketSummary(count: 0, topPrice: 0, avgPrice: 0, avgChange: 0)
+/// 相場サマリ配列からヘッダ概況を集計する。空配列なら全て 0（平均は 0）。
+public func summarizeMarket(_ summaries: [MarketSummary]) -> MarketOverview {
+    guard !summaries.isEmpty else {
+        return MarketOverview(count: 0, topPrice: 0, avgPrice: 0, avgChange: 0)
     }
-    let topPrice = records.map(\.price).max() ?? 0
-    let avgPrice = Double(records.reduce(0) { $0 + $1.price }) / Double(records.count)
-    let avgChange = records.reduce(0.0) { $0 + $1.change } / Double(records.count)
-    return MarketSummary(
-        count: records.count,
+    let topPrice = summaries.map(\.price).max() ?? 0
+    let avgPrice = Double(summaries.reduce(0) { $0 + $1.price }) / Double(summaries.count)
+    let avgChange = summaries.reduce(0.0) { $0 + $1.change } / Double(summaries.count)
+    return MarketOverview(
+        count: summaries.count,
         topPrice: topPrice,
         avgPrice: avgPrice,
         avgChange: avgChange

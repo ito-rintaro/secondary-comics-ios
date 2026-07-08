@@ -44,23 +44,27 @@ struct CollectionQueryTests {
 
 @Suite("Market query")
 struct MarketQueryTests {
-    private func records() -> [MarketRecord] {
+    private func summaries() -> [MarketSummary] {
         [
-            MarketRecord(id: "1", title: "A", price: 1000, change: 0.50, listedAt: 10),
-            MarketRecord(id: "2", title: "B", price: 3000, change: 0.10, listedAt: 30),
-            MarketRecord(id: "3", title: "C", price: 2000, change: 0.30, listedAt: 20)
+            MarketSummary(catalogId: "1", title: "A", author: "山田", price: 1000, change: 0.50, lastSoldAt: "2026-01-10"),
+            MarketSummary(catalogId: "2", title: "B", author: "鈴木", price: 3000, change: 0.10, lastSoldAt: "2026-03-30"),
+            MarketSummary(catalogId: "3", title: "C", author: "山田", price: 2000, change: 0.30, lastSoldAt: "2026-02-20")
         ]
     }
 
     @Test func sortPriceDescIsDefault() {
-        #expect(applyMarketQuery(records()).map(\.id) == ["2", "3", "1"])
+        #expect(applyMarketQuery(summaries()).map(\.id) == ["2", "3", "1"])
     }
 
     @Test func sortTrendDesc() {
-        #expect(applyMarketQuery(records(), sort: .trendDesc).map(\.id) == ["1", "3", "2"])
+        #expect(applyMarketQuery(summaries(), sort: .trendDesc).map(\.id) == ["1", "3", "2"])
     }
 
-    @Test func sortNewest() {
-        #expect(applyMarketQuery(records(), sort: .newest).map(\.id) == ["2", "3", "1"])
+    @Test func sortRecentDesc() {
+        #expect(applyMarketQuery(summaries(), sort: .recentDesc).map(\.id) == ["2", "3", "1"])
+    }
+
+    @Test func searchMatchesAuthor() {
+        #expect(applyMarketQuery(summaries(), search: "山田").map(\.id).sorted() == ["1", "3"])
     }
 }

@@ -57,25 +57,46 @@ enum DemoData {
         )
     ]
 
-    static let market: [MarketRecord] = [
-        MarketRecord(
-            id: "m1", title: "AKIRA", author: "大友克洋", publisher: "講談社", volume: "全6巻",
-            seller: "古書つかさ", condition: .s, flags: ConditionFlags(firstEd: true, obi: true),
-            history: [38000, 38500, 39000, 39500, 40000, 40500, 41000, 41200, 41500, 41800, 42500, 44000],
-            price: 44000, change: changeRate([38000, 44000]), listedAt: 1050
-        ),
-        MarketRecord(
-            id: "m2", title: "鋼の錬金術師", author: "荒川弘", publisher: "スクウェア・エニックス", volume: "全27巻",
-            seller: "まんだらけ", condition: .a, flags: ConditionFlags(firstEd: true),
-            history: [16000, 16200, 16500, 16800, 17000, 17200, 17500, 17800, 18000, 18200, 18500, 18800],
-            price: 18800, change: changeRate([16000, 18800]), listedAt: 1040
-        ),
-        MarketRecord(
-            id: "m3", title: "ドラゴンボール", author: "鳥山明", publisher: "集英社", volume: "全42巻",
-            seller: "駿河屋", condition: .b, flags: ConditionFlags(),
-            history: [32000, 31500, 31000, 30500, 30000, 29500, 29000, 28800, 28500, 28200, 28000, 27500],
-            price: 27500, change: changeRate([32000, 27500]), listedAt: 1030
-        )
+    /// 成約ログ（1 レコード = 1 価格）。相場サマリはこれを畳み込んで導出する（`deriveMarketSummaries`）。
+    /// 書誌は catalog（cat-001/002/003）由来。日付は直近 1 年に散らしてチャートが成立するようにしている。
+    static let marketSales: [MarketSale] = [
+        // AKIRA（cat-002）: 上昇トレンド
+        MarketSale(id: "mk-a1", title: "AKIRA", author: "大友克洋", publisher: "講談社", volume: "全6巻",
+                   flags: ConditionFlags(firstEd: true), catalogId: "cat-002", condition: .a, price: 38000, soldAt: "2025-09-14", seller: "古書つかさ"),
+        MarketSale(id: "mk-a2", title: "AKIRA", author: "大友克洋", publisher: "講談社", volume: "全6巻",
+                   flags: ConditionFlags(firstEd: true), catalogId: "cat-002", condition: .a, price: 39000, soldAt: "2025-11-20", seller: "まんだらけ"),
+        MarketSale(id: "mk-a3", title: "AKIRA", author: "大友克洋", publisher: "講談社", volume: "全6巻",
+                   flags: ConditionFlags(firstEd: true), catalogId: "cat-002", condition: .s, price: 40000, soldAt: "2026-01-08", seller: "ヤフオク"),
+        MarketSale(id: "mk-a4", title: "AKIRA", author: "大友克洋", publisher: "講談社", volume: "全6巻",
+                   flags: ConditionFlags(firstEd: true), catalogId: "cat-002", condition: .a, price: 41000, soldAt: "2026-03-15", seller: "駿河屋"),
+        MarketSale(id: "mk-a5", title: "AKIRA", author: "大友克洋", publisher: "講談社", volume: "全6巻",
+                   flags: ConditionFlags(firstEd: true), catalogId: "cat-002", condition: .s, price: 42500, soldAt: "2026-05-02", seller: "古書つかさ"),
+        MarketSale(id: "mk-a6", title: "AKIRA", author: "大友克洋", publisher: "講談社", volume: "全6巻",
+                   flags: ConditionFlags(firstEd: true), catalogId: "cat-002", condition: .s, price: 44000, soldAt: "2026-07-05", seller: "コレクター田中"),
+
+        // 鋼の錬金術師（cat-001）: 緩やかな上昇
+        MarketSale(id: "mk-h1", title: "鋼の錬金術師", author: "荒川弘", publisher: "スクウェア・エニックス", volume: "全27巻",
+                   flags: ConditionFlags(firstEd: true, obi: true), catalogId: "cat-001", condition: .a, price: 16000, soldAt: "2025-08-30", seller: "まんだらけ"),
+        MarketSale(id: "mk-h2", title: "鋼の錬金術師", author: "荒川弘", publisher: "スクウェア・エニックス", volume: "全27巻",
+                   flags: ConditionFlags(firstEd: true, obi: true), catalogId: "cat-001", condition: .a, price: 16500, soldAt: "2025-10-12", seller: "駿河屋"),
+        MarketSale(id: "mk-h3", title: "鋼の錬金術師", author: "荒川弘", publisher: "スクウェア・エニックス", volume: "全27巻",
+                   flags: ConditionFlags(firstEd: true, obi: true), catalogId: "cat-001", condition: .s, price: 17200, soldAt: "2025-12-25", seller: "ブックオフ"),
+        MarketSale(id: "mk-h4", title: "鋼の錬金術師", author: "荒川弘", publisher: "スクウェア・エニックス", volume: "全27巻",
+                   flags: ConditionFlags(firstEd: true, obi: true), catalogId: "cat-001", condition: .a, price: 17800, soldAt: "2026-02-18", seller: "まんだらけ"),
+        MarketSale(id: "mk-h5", title: "鋼の錬金術師", author: "荒川弘", publisher: "スクウェア・エニックス", volume: "全27巻",
+                   flags: ConditionFlags(firstEd: true, obi: true), catalogId: "cat-001", condition: .s, price: 18800, soldAt: "2026-06-22", seller: "古書つかさ"),
+
+        // ドラゴンボール（cat-003）: 下降トレンド
+        MarketSale(id: "mk-d1", title: "ドラゴンボール", author: "鳥山明", publisher: "集英社", volume: "全42巻",
+                   flags: ConditionFlags(), catalogId: "cat-003", condition: .b, price: 32000, soldAt: "2025-08-05", seller: "駿河屋"),
+        MarketSale(id: "mk-d2", title: "ドラゴンボール", author: "鳥山明", publisher: "集英社", volume: "全42巻",
+                   flags: ConditionFlags(), catalogId: "cat-003", condition: .b, price: 31000, soldAt: "2025-10-01", seller: "ヤフオク"),
+        MarketSale(id: "mk-d3", title: "ドラゴンボール", author: "鳥山明", publisher: "集英社", volume: "全42巻",
+                   flags: ConditionFlags(), catalogId: "cat-003", condition: .c, price: 30000, soldAt: "2025-12-11", seller: "ブックオフ"),
+        MarketSale(id: "mk-d4", title: "ドラゴンボール", author: "鳥山明", publisher: "集英社", volume: "全42巻",
+                   flags: ConditionFlags(), catalogId: "cat-003", condition: .b, price: 28200, soldAt: "2026-04-19", seller: "駿河屋"),
+        MarketSale(id: "mk-d5", title: "ドラゴンボール", author: "鳥山明", publisher: "集英社", volume: "全42巻",
+                   flags: ConditionFlags(), catalogId: "cat-003", condition: .b, price: 27500, soldAt: "2026-06-15", seller: "まんだらけ")
     ]
 }
 
@@ -127,8 +148,9 @@ struct CatalogRepositoryDemo: CatalogRepository {
 }
 
 struct MarketRepositoryDemo: MarketRepository {
-    func fetchMarket() async throws -> [MarketRecord] {
+    func fetchMarketSummary() async throws -> [MarketSummary] {
         try? await Task.sleep(for: .milliseconds(300))
-        return DemoData.market
+        // サーバの集計を模し、成約ログを catalog 単位のサマリへ畳み込む。
+        return deriveMarketSummaries(from: DemoData.marketSales)
     }
 }

@@ -37,7 +37,7 @@ iOS 版 MVP は「閲覧 + 集計表示」に絞れる。書き込みは後続�
 
 | 要素 | 内容 | 取得元 |
 |---|---|---|
-| API | `GET /collection`（本人のコレクション） / `GET /market`（全ユーザー共通の相場） | [openapi.yaml](./openapi.yaml) |
+| API | `GET /collection`（本人のコレクション） / `GET /market/summary`（全ユーザー共通の相場サマリ）・`GET /market`（成約ログ） | [openapi.yaml](./openapi.yaml) |
 | 認証 | Amazon Cognito。`Authorization: Bearer <IDトークン>` を付与。サーバが JWT の `sub` で本人データに絞る | §4 |
 | 画像 | API は S3 オブジェクトキー（ファイル名のみ）を返す。CloudFront ドメイン + `/images/` を前置して表示 | §6.2 |
 
@@ -73,20 +73,41 @@ Web の `src/domain/` の純 TypeScript を Swift へ 1:1 で移植する。**�
 | `imageUrl` | String | S3 オブジェクトキー（空可。§6.2 で解決） |
 | `updatedAt` | Int64 | 最終更新（epoch ミリ秒） |
 
-### 3.2 MarketRecord（マーケットの相場レコード）
+### 3.2 マーケット（成約ログ＋相場サマリの 2 層）
+
+マーケットは「出品 1 件に月次 `history[12]` を持つ」旧 `MarketRecord` をやめ、**成約ログ（1 レコード = 1 価格）** と **相場サマリ（catalog 単位で集計・導出）** の 2 層に分かれる。相場一覧カード・価格チャートの供給源は `MarketSummary`。
+
+#### MarketSale（成約ログ・`GET /market`）
 
 | フィールド | 型 | 意味 |
 |---|---|---|
-| `id` | String | 識別子 |
-| `title` / `author` / `publisher` / `volume` | String | 作品情報 |
-| `seller` | String | 出品者 / ショップ名 |
-| `condition` | Condition | 状態ランク |
-| `flags` | ConditionFlags | 初版/帯/特装 |
-| `history` | [Int] | **直近 12 ヶ月**の価格推移（円）。要素数 12。末尾が現在価格 |
-| `price` | Int | 現在価格（= `history` の末尾） |
+| `id` | String | レコード識別子（mk-xxx） |
+| `title` / `author` / `publisher` / `volume` | String | 作品情報（Catalog 由来） |
+| `flags` | ConditionFlags | 初版/帯/特装（Catalog 由来） |
+| `imageUrl` | String | S3 オブジェクトキー（Catalog 由来・空可） |
+| `catalogId` | String | 参照する Catalog の id |
+| `condition` | Condition | この成約個体の状態ランク |
+| `price` | Int | 成約価格（円）＝単一 |
+| `soldAt` | String | 成約日 `YYYY-MM-DD` |
+| `seller` | String | 販売元 / ショップ名（空可） |
+
+#### MarketSummary（相場サマリ・`GET /market/summary`）
+
+catalog 単位に集計した読み取りモデル。成約が 1 件以上ある catalog のみ返る。`price` / `change` / `history` は旧 `MarketRecord` と名前も意味も据え置きで、既存のカード価格表示・折れ線チャートのロジックをそのまま流用できる。
+
+| フィールド | 型 | 意味 |
+|---|---|---|
+| `catalogId` | String | 集計単位＝参照する Catalog の id（`Identifiable` の id） |
+| `title` / `author` / `publisher` / `volume` | String | 作品情報（Catalog 由来） |
+| `flags` | ConditionFlags | 初版/帯/特装（Catalog 由来） |
+| `imageUrl` | String | S3 オブジェクトキー（Catalog 由来・空可） |
+| `price` | Int | 現在価格（= `history` 末尾） |
 | `change` | Double | 期間変化率 `(末尾 - 先頭) / 先頭`。0.18 → +18% |
-| `listedAt` | Int64 | 新着ソート用の連番（大きいほど新しい） |
-| `imageUrl` | String | S3 オブジェクトキー（空可） |
+| `history` | [Int] | 月次に畳んだ擬似系列（円）。要素数 12・末尾＝当月。成約の無い月は前方フィル、最初の成約より前はバックフィル |
+| `sampleCount` | Int | 集計に使った成約点数（相場の信頼度の目安） |
+| `lastSoldAt` | String | 直近成約日 `YYYY-MM-DD` |
+
+> `seller` / 個別 `condition` / listing 単位の `id` / 旧 `listedAt` は catalog 単位の `MarketSummary` には無い。出品者などが要る場合は `GET /market`（成約ログ）から別途引く。ソートは `price` / `change` / `lastSoldAt` で行う。
 
 ### 3.3 値オブジェクト
 
@@ -114,11 +135,15 @@ totalCost  = Σ acquisitionCost(it)     // 総取得額
 totalValue = Σ evaluation(it)          // 現在評価額
 pl         = totalValue - totalCost    // 含み損益
 
-// マーケット全体サマリー summarizeMarket(records)
-count    = records.count
+// マーケット全体ヘッダ概況 summarizeMarket(summaries) -> MarketOverview
+count    = summaries.count          // 相場のある銘柄数
 topPrice = max(price)
 avgPrice = mean(price)
 avgChange= mean(change)
+
+// 成約ログ → 相場サマリの畳み込み deriveMarketSummaries(sales)（サーバ集計のクライアント再現）
+//   catalog 単位にグルーピング → 月次12バケットへ集約（当月平均）
+//   空月は前方フィル、最初の成約より前はバックフィル → history[12] / price / change を導出
 
 // 価格推移の変化率（先頭が 0/空なら 0）
 changeRate(history) = history.isEmpty || history[0] == 0
@@ -169,7 +194,7 @@ API リクエスト時の挙動（Web の `infrastructure/http/apiClient.ts` 相
 | 機能 | API | iOS MVP |
 |---|---|---|
 | コレクション一覧取得 | `GET /collection` ✅稼働 | **含む** |
-| マーケット相場取得 | `GET /market` ✅稼働 | **含む** |
+| マーケット相場取得 | `GET /market/summary` ✅稼働 | **含む** |
 | サマリー / 検索 / フィルタ / ソート / 集計 | クライアント側で算出 | **含む**（§3, §7） |
 | コレクション 登録/編集/削除 | ❌未提供 | **含まない**（API 提供後） |
 | 画像アップロード | ❌未提供 | **含まない** |
@@ -252,8 +277,8 @@ iOS では **`TabView`（マイコレクション / マーケット）** + 詳�
 - 空状態のガイド。
 
 ### 7.2 ③ マーケット一覧
-- 上部にサマリー: 出品数 / 最高額 / 平均価格 / 平均値上がり率。→ §3.4 `summarizeMarket`。
-- 相場カード: 画像・タイトル・現在価格・変化率（色）・**12ヶ月スパークライン**。
+- 上部にサマリー: 銘柄数 / 最高額 / 平均価格 / 平均値上がり率。→ §3.4 `summarizeMarket`。
+- 相場カード: 画像・タイトル・書誌メタ（著者/巻数/出版社）・現在価格・変化率（色）・**12ヶ月スパークライン**。seller / 個別 condition は catalog 単位のサマリには無いため表示しない。
 - 検索 + ソート（§7.3）。
 - カードタップで ④ 相場詳細（大きな 12ヶ月チャート、最安/最高/変動）。
 
@@ -267,9 +292,9 @@ iOS では **`TabView`（マイコレクション / マーケット）** + 詳�
   sort:   updated(更新新しい順, 既定) | marketDesc(相場高い順) | plDesc(損益大きい順) | titleAsc(タイトル順)
   search: title/author/publisher などへの部分一致
 
-マーケット:
-  sort:   priceDesc(価格高い順, 既定) | trendDesc(値上がり率高い順) | newest(新着順 = listatAt 降順)
-  search: 部分一致
+マーケット（相場サマリ MarketSummary を対象）:
+  sort:   priceDesc(価格高い順, 既定) | trendDesc(値上がり率高い順) | recentDesc(直近成約順 = lastSoldAt 降順)
+  search: title/author/publisher への部分一致（seller は持たない）
 ```
 
 ---
@@ -279,9 +304,9 @@ iOS では **`TabView`（マイコレクション / マーケット）** + 詳�
 Web のクリーンアーキテクチャ（[architecture.md](./architecture.md)）を踏襲すると、後で書き込み API が来ても差し替えが楽。
 
 ```
-Domain          : CollectionItem / MarketRecord / Condition / ConditionFlags
-                  + 純粋関数（profitLoss, evaluation, summarize, changeRate …）  ← §3
-Application      : ListCollection / ListMarket ユースケース + Repository プロトコル（port）
+Domain          : CollectionItem / MarketSale / MarketSummary / Condition / ConditionFlags
+                  + 純粋関数（profitLoss, evaluation, summarize, changeRate, deriveMarketSummaries …）  ← §3
+Application      : ListCollection / ListMarketSummary ユースケース + Repository プロトコル（port）
 Infrastructure   : CollectionRepositoryImpl（API） / ...Demo（モック）
                   + APIClient（Cognito トークン付与）+ 画像 URL 解決
 Presentation     : SwiftUI View + ObservableObject（ViewModel）

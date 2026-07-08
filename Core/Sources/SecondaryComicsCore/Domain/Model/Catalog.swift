@@ -1,6 +1,6 @@
 import Foundation
 
-/// 書誌マスタ（Catalog）1 件。Collection / MarketRecord が catalogId で参照する hub。
+/// 書誌マスタ（Catalog）1 件。Collection / MarketSale が catalogId で参照する hub。
 /// 全ユーザー共通（グローバル）データで、`GET /catalogs` で取得する。
 /// プロパティ名は OpenAPI の `Catalog` と一致させる（追加マッピング不要）。
 public struct Catalog: Codable, Sendable, Identifiable, Equatable {
