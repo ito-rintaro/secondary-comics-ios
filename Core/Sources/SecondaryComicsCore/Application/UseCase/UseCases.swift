@@ -34,13 +34,13 @@ public struct ListCatalogs: Sendable {
     }
 }
 
-/// マーケット一覧ユースケース。
-public struct ListMarket: Sendable {
+/// マーケット相場サマリ一覧ユースケース。
+public struct ListMarketSummary: Sendable {
     private let repository: MarketRepository
     public init(repository: MarketRepository) {
         self.repository = repository
     }
-    public func callAsFunction() async throws -> [MarketRecord] {
-        try await repository.fetchMarket()
+    public func callAsFunction() async throws -> [MarketSummary] {
+        try await repository.fetchMarketSummary()
     }
 }

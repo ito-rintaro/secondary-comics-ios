@@ -19,7 +19,7 @@ struct RootView: View {
         self.createCollection = container.createCollection
 
         let collection = CollectionListModel(listCollection: container.listCollection)
-        let market = MarketListModel(listMarket: container.listMarket)
+        let market = MarketListModel(listMarketSummary: container.listMarketSummary)
         // 401 → 強制サインアウト（ログイン画面へ）。
         collection.onUnauthorized = { authModel.forceSignedOut() }
         market.onUnauthorized = { authModel.forceSignedOut() }

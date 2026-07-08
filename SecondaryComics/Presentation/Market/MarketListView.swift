@@ -20,7 +20,7 @@ struct MarketListView: View {
             .navigationTitle("マーケット")
             .toolbarColorScheme(.dark, for: .navigationBar)
         }
-        .searchable(text: $model.search, prompt: "作品名・著者・ショップ")
+        .searchable(text: $model.search, prompt: "作品名・著者・出版社")
         .task { if case .idle = model.state { await model.load() } }
     }
 
@@ -32,7 +32,7 @@ struct MarketListView: View {
         case .failed(let message):
             ErrorStateView(message: message) { Task { await model.load() } }
         case .loaded:
-            if model.visibleRecords.isEmpty {
+            if model.visibleSummaries.isEmpty {
                 EmptyStateView(icon: "chart.line.uptrend.xyaxis", title: "相場がありません", message: "条件を変えてみてください。")
             } else {
                 list
@@ -43,13 +43,13 @@ struct MarketListView: View {
     private var list: some View {
         ScrollView {
             VStack(spacing: 12) {
-                MarketSummaryHeader(summary: model.summary)
+                MarketOverviewHeader(overview: model.overview)
                 sortBar
-                ForEach(model.visibleRecords) { record in
+                ForEach(model.visibleSummaries) { summary in
                     NavigationLink {
-                        MarketDetailView(record: record, imageBaseURL: imageBaseURL)
+                        MarketDetailView(summary: summary, imageBaseURL: imageBaseURL)
                     } label: {
-                        MarketRecordCard(record: record, imageBaseURL: imageBaseURL)
+                        MarketSummaryCard(summary: summary, imageBaseURL: imageBaseURL)
                     }
                     .buttonStyle(.plain)
                 }
@@ -71,15 +71,15 @@ struct MarketListView: View {
     }
 }
 
-private struct MarketSummaryHeader: View {
-    let summary: MarketSummary
+private struct MarketOverviewHeader: View {
+    let overview: MarketOverview
 
     var body: some View {
         HStack(spacing: 12) {
-            metric("出品数", "\(summary.count)", Theme.text)
-            metric("最高額", Format.yen(summary.topPrice), Theme.text)
-            metric("平均価格", Format.yen(Int(summary.avgPrice.rounded())), Theme.text)
-            metric("平均値上り", Format.percent(summary.avgChange), Theme.changeColor(summary.avgChange))
+            metric("銘柄数", "\(overview.count)", Theme.text)
+            metric("最高額", Format.yen(overview.topPrice), Theme.text)
+            metric("平均価格", Format.yen(Int(overview.avgPrice.rounded())), Theme.text)
+            metric("平均値上り", Format.percent(overview.avgChange), Theme.changeColor(overview.avgChange))
         }
         .frame(maxWidth: .infinity)
         .padding(16)
@@ -95,25 +95,32 @@ private struct MarketSummaryHeader: View {
     }
 }
 
-private struct MarketRecordCard: View {
-    let record: MarketRecord
+private struct MarketSummaryCard: View {
+    let summary: MarketSummary
     let imageBaseURL: String
+
+    // 出品者・個別 condition は相場サマリ（catalog 単位）には無いため、書誌メタを見出しに使う。
+    private var metaLine: String {
+        [summary.author, summary.volume, summary.publisher]
+            .filter { !$0.isEmpty }
+            .joined(separator: " ・ ")
+    }
 
     var body: some View {
         HStack(spacing: 12) {
-            RemoteImage(imageUrl: record.imageUrl, imageBaseURL: imageBaseURL)
+            RemoteImage(imageUrl: summary.imageUrl, imageBaseURL: imageBaseURL)
                 .frame(width: 48, height: 68)
             VStack(alignment: .leading, spacing: 4) {
-                Text(record.title).font(.headline).foregroundStyle(Theme.text).lineLimit(1)
-                Text(record.seller).font(.caption).foregroundStyle(Theme.muted).lineLimit(1)
-                StateBadges(flags: record.flags, condition: record.condition)
+                Text(summary.title).font(.headline).foregroundStyle(Theme.text).lineLimit(1)
+                Text(metaLine).font(.caption).foregroundStyle(Theme.muted).lineLimit(1)
+                StateBadges(flags: summary.flags)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 4) {
-                Sparkline(history: record.history, color: Theme.changeColor(record.change))
+                Sparkline(history: summary.history, color: Theme.changeColor(summary.change))
                     .frame(width: 64, height: 28)
-                Text(Format.yen(record.price)).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.text)
-                Text(Format.percent(record.change)).font(.caption).foregroundStyle(Theme.changeColor(record.change))
+                Text(Format.yen(summary.price)).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.text)
+                Text(Format.percent(summary.change)).font(.caption).foregroundStyle(Theme.changeColor(summary.change))
             }
         }
         .padding(12)

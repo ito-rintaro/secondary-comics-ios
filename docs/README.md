@@ -26,7 +26,7 @@ secondary-comics-ios/
 
 | フォルダ | 担っている内容 |
 |---|---|
-| `Core/.../Domain/Model/` | データの型（CollectionItem / MarketRecord / Condition など）。§3.1–3.3 |
+| `Core/.../Domain/Model/` | データの型（CollectionItem / MarketSale / MarketSummary / Condition など）。§3.1–3.3 |
 | `Core/.../Domain/Calculation/` | **計算式の正**。含み損益・評価額・サマリー・変化率。§3.4 |
 | `Core/.../Application/Port/` | `CollectionRepository`（取得 + `createCollection`）/ `MarketRepository` / `CatalogRepository` protocol（**Demo↔API 差し替えの接合点**）。§8 |
 | `Core/.../Application/UseCase/` | データ取得・作成を依頼する薄い指揮役（`ListCollection` / `CreateCollection` / `ListCatalogs` など）。§8 |
@@ -38,7 +38,7 @@ secondary-comics-ios/
 | フォルダ | 担っている内容 |
 |---|---|
 | `App/` | アプリ起動（`@main`）と **DI コンテナ `AppContainer`** + 環境設定 `AppConfig`。`config.useAPI` で Demo / 実API を配線。`AppConfig.current` が dev/prod を切替（§4） |
-| `Infrastructure/Repository/` | Repository protocol の実装。Demo（`*RepositoryDemo`）と 実API（`*RepositoryAPI`：`GET /collection` `POST /collection` `GET /market` `GET /catalogs`）の両方 |
+| `Infrastructure/Repository/` | Repository protocol の実装。Demo（`*RepositoryDemo`）と 実API（`*RepositoryAPI`：`GET /collection` `POST /collection` `GET /market/summary` `GET /catalogs`）の両方 |
 | `Infrastructure/Network/` | `APIClient`（Bearer 付与・GET/POST・401 判定・`{message}` エラー本文の解釈・JSON エンコード/デコード）+ `APIError`。§4 |
 | `Infrastructure/Auth/` | Cognito 認証。`AuthService` / `TokenProvider`（Amplify 実装 + Demo 用 Stub）・Amplify 構成。トークンは Keychain に永続化され再起動後も自動ログイン。§4 |
 | `Infrastructure/Image/` | 画像 URL の解決（S3キー → CloudFront URL）。§6.2 |

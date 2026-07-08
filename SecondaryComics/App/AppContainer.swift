@@ -2,7 +2,7 @@ import Foundation
 import SecondaryComicsCore
 
 /// DI コンテナ。`config.useAPI` で Repository / 認証の Demo ↔ 実 API を切り替える。
-/// - useAPI = true  : Amplify(Cognito) 認証 + `*RepositoryAPI`（`GET /collection` `GET /market`）
+/// - useAPI = true  : Amplify(Cognito) 認証 + `*RepositoryAPI`（`GET /collection` `GET /market/summary`）
 /// - useAPI = false : `StubAuthService`（ログイン素通り）+ `*RepositoryDemo`（モックデータ）
 @MainActor
 final class AppContainer {
@@ -51,6 +51,6 @@ final class AppContainer {
 
     var listCollection: ListCollection { ListCollection(repository: collectionRepository) }
     var createCollection: CreateCollection { CreateCollection(repository: collectionRepository) }
-    var listMarket: ListMarket { ListMarket(repository: marketRepository) }
+    var listMarketSummary: ListMarketSummary { ListMarketSummary(repository: marketRepository) }
     var listCatalogs: ListCatalogs { ListCatalogs(repository: catalogRepository) }
 }
