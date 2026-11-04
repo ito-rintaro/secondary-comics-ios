@@ -1,5 +1,5 @@
 # secondary-comics-ios
-
+プレミア漫画のコレクション管理と相場確認アプリのiOS版。SwiftUI
 プレミア漫画の「コレクション管理 × 相場確認」アプリの iOS ネイティブ版（SwiftUI, iOS 17+）。
 バックエンド（API・認証・画像）は Web 版と共通。仕様は [ios-handoff.md](./ios-handoff.md) を正とする。
 
